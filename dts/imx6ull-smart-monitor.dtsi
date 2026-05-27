@@ -1,0 +1,59 @@
+/ {
+  /* ========== LED 驱动 (CDEV) ========== */
+  comp_drv_dev {
+    compatible = "smartmonitor,comp-drv";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_led>;          /* ← 引用已有的引脚配置 */
+    led-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+    status = "okay";
+  };
+  
+  /* ========== 按键输入驱动 (Input + IRQ) ========== */
+  key_input_dev {
+    compatible = "smartmonitor,key-input";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_key>;          /* ← 引用已有的引脚配置 */
+    key-gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+    interrupt-parent = <&gpio1>;
+    interrupts = <18 IRQ_TYPE_EDGE_BOTH>;
+    key-code = <28>;
+    debounce-interval = <20>;
+    status = "okay";
+  };
+  
+  /* ========== UART 串口传感器驱动 ========== */
+  uart_sensor_dev {
+    compatible = "smartmonitor,uart-sensor";
+    current-speed = <115200>;
+    status = "okay";
+  };
+  
+  /* ========== 系统状态监控 (Misc 设备) ========== */
+  sys_monitor_dev {
+    compatible = "smartmonitor,sys-monitor";
+    status = "okay";
+  };
+};
+
+
+/* ========== I2C1 — AP3216C 光照/接近传感器 ========== */
+&i2c1 {
+  ap3216c: ap3216c@1e {
+    compatible = "smartmonitor,ap3216c";
+    reg = <0x1e>;
+  };
+};
+
+  /* ========== ECSPI3 — ICM20608 6轴传感器 ========== */
+&ecspi3 {
+  icm20608: icm20608@0 {
+    compatible = "smartmonitor,icm20608";
+    reg = <0>;   //这个reg为片选地址
+    spi-max-frequency = <8000000>;   /* 8 MHz */
+  };
+};
+
+  /* ========== UART3 — 串口传感器（确认开启） ========== */
+&uart3 {
+  status = "okay";
+};
