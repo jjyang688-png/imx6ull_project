@@ -55,4 +55,4 @@ scripts/    — build.sh / deploy.sh / test_all.sh / checkpatch.sh
 ## 参考
 
 - 前身项目 firstcc: `C:\Users\2104022\Desktop\code\firstcc`（完整参考实现）
-- GitHub: `jjyang688-png/firstcc` (已推送), `jjyang688-png/imx6ull_project` (待推送)
+- GitHub: `jjyang688-png/firstcc` (已推送), `jjyang688-png/imx6ull_project` (已推送)
