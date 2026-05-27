@@ -1,0 +1,10 @@
+*.c text eol=lf
+*.h text eol=lf
+*.S text eol=lf
+Makefile text eol=lf
+*.mk text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.dts text eol=lf
+*.dtsi text eol=lf
+*.txt text eol=lf

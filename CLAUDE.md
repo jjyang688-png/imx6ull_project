@@ -6,7 +6,9 @@
 
 | 项目 | 值 |
 |------|-----|
-| Windows 代码编辑 | VS Code 通过 Samba (`\\192.168.80.106\imx6ull`) 编辑 Linux 上的文件 |
+| Windows 代码编辑 | VS Code 通过 Samba 编辑 Linux 上的文件 |
+| Samba 共享 | `\\192.168.80.106\imx6ull` → 项目目录；`\\192.168.80.106\linux` → `/home/yang/linux`（含内核源码树） |
+| VS Code IntelliSense | `.vscode/c_cpp_properties.json` 已配置内核头文件路径，支持跳转定义 |
 | Linux 编译环境 | Ubuntu 16.04 @ 192.168.80.106，用户 yang |
 | 交叉编译器 | ARM gcc 5.4.0 (`arm-linux-gnueabihf-gcc`) |
 | 内核源码树 | `/home/yang/linux/alentek_uboot/linux/linux-imx-rel_imx_4.1.15_2.1.0_ga_alientek` |

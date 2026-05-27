@@ -1,27 +1,26 @@
 # Kernel build artifacts
+*.o
 *.ko
 *.mod.c
 *.mod.o
-*.o
-Module.symvers
+*.order
+*.symvers
+.*.cmd
+*.tmp_versions/
 modules.order
-.tmp_versions/
+Module.symvers
 
-# Compiled applications
-app/test_*
-app/smart_monitor
-
-# Compiled device tree
+# Compiled DTB/DTBO
 *.dtb
 *.dtbo
 
-# Editors & IDE
-.vscode/
+# User binary
+app/smart_monitor
+app/test_*
+
+# Editors
 *.swp
 *.swo
-.DS_Store
 *~
-
-# Patch & diff
-*.patch
-*.diff
+.vscode/
+.claude/
