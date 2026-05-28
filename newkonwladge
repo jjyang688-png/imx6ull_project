@@ -1,0 +1,4 @@
+第三阶段
+    为什么不直接使用全局变量来保存，而要使用platform_set_drvdata(pdev, dev)来保存
+    第一次见该函数devm_gpiod_get，之前使用的of函数来匹配gpio
+    platform_device是在什么时候被创建的

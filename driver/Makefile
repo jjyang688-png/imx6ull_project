@@ -1,8 +1,7 @@
-KERNEL_DIR ?= /home/alientek/linux/imx6ull
+KERNEL_DIR ?= /home/yang/linux/alentek_uboot/linux/linux-imx-rel_imx_4.1.15_2.1.0_ga_alientek
 
 # List kernel modules to build
-obj-m := hello.o
-
+obj-m := hello.o comp_drv.o
 all:
 	@if [ -z "$(KERNEL_DIR)" ] ; then \
 		echo "Error: KERNEL_DIR not set"; \

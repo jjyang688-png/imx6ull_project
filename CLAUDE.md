@@ -44,7 +44,7 @@ scripts/    — build.sh / deploy.sh / test_all.sh / checkpatch.sh
 |------|------|------|
 | 1 | 项目立项与环境搭建 | ✓ 完成 |
 | 2 | 设备树设计 | ✓ 完成 |
-| 3 | LED 驱动 (CDEV) | 待开始 |
+| 3 | LED 驱动 (CDEV) | ✓ 完成 |
 | 4 | 并发+IO 模型 | 待开始 |
 | 5 | 按键输入驱动 | 待开始 |
 | 6 | I2C + SPI 传感器 | 待开始 |
