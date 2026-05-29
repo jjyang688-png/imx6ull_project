@@ -1,4 +1,15 @@
-第三阶段
-    为什么不直接使用全局变量来保存，而要使用platform_set_drvdata(pdev, dev)来保存
-    第一次见该函数devm_gpiod_get，之前使用的of函数来匹配gpio
-    platform_device是在什么时候被创建的
+第四阶段
+    #define COMP_DRV_SET_BLINK_PERIOD  _IOW(COMP_DRV_MAGIC, 1, unsigned long)
+    #define COMP_DRV_GET_STATUS        _IOR(COMP_DRV_MAGIC, 2, unsigned long)
+    #define COMP_DRV_START_BLINK       _IO(COMP_DRV_MAGIC, 3)
+    #define COMP_DRV_STOP_BLINK        _IO(COMP_DRV_MAGIC, 4)
+    _IO / _IOR / _IOW 宏的含义,讲一下这几个宏,包括其中的参数,和常用的write,read等有什么区别
+
+    atomic_t changed;
+    这个是如何与等待队列搭配使用的
+
+    阻塞，异步通知,mutex,poll做为本章的重点知识点(结合项目执行流程和用户态)并且用到这么多通知方式会不会过于重复了
+
+    sysfs和debugsfs为我第一次接触,整个执行流程比较模糊
+
+    probe 和 remove 的对称性(对其中比较重要的内容做解释说明)
