@@ -46,7 +46,7 @@ scripts/    — build.sh / deploy.sh / test_all.sh / checkpatch.sh
 | 2 | 设备树设计 | ✓ 完成 |
 | 3 | LED 驱动 (CDEV) | ✓ 完成 |
 | 4 | 并发+IO 模型 | 待开始 |
-| 5 | 按键输入驱动 | 待开始 |
+| 5 | 按键输入驱动 | ✓ 完成 |
 | 6 | I2C + SPI 传感器 | 待开始 |
 | 7 | UART + Misc 驱动 | 待开始 |
 | 8 | 统一应用+集成测试 | 待开始 |
