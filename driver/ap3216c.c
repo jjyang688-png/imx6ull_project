@@ -19,8 +19,7 @@ module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "启用调试输出");
 
 #define DBG(dev, fmt, ...) \
-    do { if (debug) dev_info(&(dev)->client->dev, fmt, ##__VA_ARGS__); }
-while (0)
+    do { if (debug) dev_info(&(dev)->client->dev, fmt, ##__VA_ARGS__); } while (0)
 
 /* ====== AP3216C 寄存器地址 ======
    *
@@ -262,7 +261,7 @@ err_cdev:
     return ret;
 }
 
-static void ap3216c_remove(struct i2c_client *client)
+static int ap3216c_remove(struct i2c_client *client)
 {
     struct ap3216c_dev *dev = i2c_get_clientdata(client);
 
@@ -275,6 +274,7 @@ static void ap3216c_remove(struct i2c_client *client)
     unregister_chrdev_region(dev->dev_id, DEVICE_COUNT);
 
     dev_info(&client->dev, "ap3216c 已卸载\n");
+    return 0;
 }
 
 /* ====== 设备树匹配表 ====== */

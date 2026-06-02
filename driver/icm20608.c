@@ -86,6 +86,10 @@ struct icm20608_dev {
 
 static struct icm20608_dev *g_icm20608;
 
+/* 前置声明：icm20608_read_reg 复用它，所以在前面声明 */
+static int icm20608_read_burst(struct icm20608_dev *dev,
+                                u8 start_reg, u8 *buf, int len);
+
 /* ===================================================================
  * SPI 单寄存器读 — 直接复用突发读（长度=1）
  * =================================================================== */
@@ -423,7 +427,7 @@ err_cdev:
  * 顺序和 probe 严格相反：先销毁设备节点，再删 cdev，最后归还设备号。
  * 退出前让芯片进入睡眠以省电。
  * =================================================================== */
-static void icm20608_remove(struct spi_device *spi)
+static int icm20608_remove(struct spi_device *spi)
 {
     struct icm20608_dev *dev = spi_get_drvdata(spi);
 
@@ -436,6 +440,7 @@ static void icm20608_remove(struct spi_device *spi)
     unregister_chrdev_region(dev->dev_id, DEVICE_COUNT);
 
     dev_info(&spi->dev, "icm20608 已卸载\n");
+    return 0;
 }
 
 /* ====== 设备树匹配表 ====== */
