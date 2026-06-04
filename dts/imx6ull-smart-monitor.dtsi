@@ -21,18 +21,27 @@
     status = "okay";
   };
   
-  /* ========== UART 串口传感器驱动 ========== */
+  /* ========== UART3 命令控制台（Phase 7） ==========
+   *
+   * UART3 硬件资源：
+   *   基地址：0x021ec000（来自 imx6ull.dtsi 的 uart3 节点）
+   *   中断号：GIC_SPI 28（Linux IRQ = 32+28 = 60）
+   *   时钟：  IMX6UL_CLK_UART3_IPG + IMX6UL_CLK_UART3_SERIAL
+   *
+   * 注意：&uart3 已设为 disabled，防止 imx 驱动抢占资源。
+   */
   uart_sensor_dev {
     compatible = "smartmonitor,uart-sensor";
+    reg = <0x021ec000 0x4000>;
+    interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
+    interrupt-parent = <&gpc>;
+    clocks = <&clks IMX6UL_CLK_UART3_IPG>,
+             <&clks IMX6UL_CLK_UART3_SERIAL>;
+    clock-names = "ipg", "per";
     current-speed = <115200>;
     status = "okay";
   };
   
-  /* ========== 系统状态监控 (Misc 设备) ========== */
-  sys_monitor_dev {
-    compatible = "smartmonitor,sys-monitor";
-    status = "okay";
-  };
 };
 
 
@@ -53,7 +62,7 @@
   };
 };
 
-  /* ========== UART3 — 串口传感器（确认开启） ========== */
+/* ========== UART3 — 释放给我们的命令控制台驱动 ========== */
 &uart3 {
-  status = "okay";
+    status = "disabled";   /* 不让 imx 驱动占用，由 uart_sensor_dev 独占 */
 };

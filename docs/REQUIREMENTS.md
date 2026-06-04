@@ -33,8 +33,7 @@
 | F-K02 | 按键输入驱动 | `/dev/input/eventX` | GPIO+IRQ | 双边沿中断触发；工作队列消抖（可配置时间）；通过 Input 子系统上报按键事件 |
 | F-K03 | 光照/接近传感器 | `/dev/ap3216c` | I2C | 读取红外光(IR)、环境光(ALS)、接近距离(PS)；支持 SMBus 和 I2C burst 传输 |
 | F-K04 | 6 轴姿态传感器 | `/dev/icm20608` | SPI | 读取 3 轴加速度 + 3 轴角速度 + 温度；支持 ioctl 分别读取各传感器数据 |
-| F-K05 | 串口传感器驱动 | `/dev/uart_sensor` | UART | 串口数据收发；kfifo 环形缓冲；阻塞/非阻塞读；poll 支持 |
-| F-K06 | 系统状态监控 | `/dev/sys_monitor` | Misc | 系统运行时间、模块心跳；使用 misc_register 轻量注册 |
+| F-K05 | UART 系统控制台 | `/dev/uart_sensor` | UART | 真实 UART 硬件寄存器操作（UART3）；RX 中断接收 → kfifo 环形缓冲；阻塞/非阻塞 read；poll 支持；TX 发送响应；命令解析（STATUS / SENSOR / LED / HELP / RESET）在用户空间实现 |
 
 ### 2.2 驱动接口要求
 
@@ -90,13 +89,56 @@
 | KEY | GPIO | GPIO1_IO18 | 低电平有效，双边沿中断 |
 | AP3216C | I2C1 | 0x1E | 光照/接近传感器 |
 | ICM20608 | ECSPI1 | CS0 | 6 轴传感器，SPI Mode 0，max 8MHz |
-| UART Sensor | UART3 | — | 串口传感器（115200-8-N-1） |
+| UART Console | UART3 | DB9 RS232 接口（SP3232 电平转换） | 波特率 115200，8N1；RX 中断驱动 + kfifo 环形缓冲；命令响应模式（STATUS/SENSOR/LED/HELP/RESET）；调试串口 UART1 不受影响 |
 
 > 详细硬件资源表见 `docs/HARDWARE.md`（阶段 2 产出）
 
 ---
 
-## 5. 里程碑
+## 5. UART 系统控制台设计（Phase 7）
+
+### 5.1 设计目标
+
+基于真实 UART 硬件寄存器操作，构建智能监测终端的串口命令控制台。
+PC 通过 USB-TTL 连接开发板 UART2，发送文本命令，设备解析并回复。
+
+### 5.2 串口分工
+
+| 串口 | 物理接口 | 用途 | 驱动 | 是否修改 |
+|------|------|------|------|------|
+| UART1 | Micro USB（CH340） | 系统调试终端（内核日志、Shell） | 内核 imx 驱动 | ❌ 不动 |
+| UART3 | DB9 RS232（SP3232） | 命令控制台（本项目开发） | 我们的 uart_sensor.c | ✅ 新增 |
+
+### 5.3 命令控制台架构
+
+```
+PC 串口助手 ──USB-RS232──► DB9 ──► UART3 RX ──► 中断 ──► kfifo_in ──► read() ──► 解析命令
+                                                                              │
+PC 串口助手 ◄──USB-RS232── DB9 ◄── UART3 TX ◄── 驱动 write ◄── 格式化响应 ◄───┘
+```
+
+### 5.3 命令集
+
+| 命令 | 格式 | 响应 |
+|------|------|------|
+| STATUS | `STATUS` | `[STATUS] uptime=xxxxxs  sensors=4/4` |
+| SENSOR | `SENSOR` | `[SENSOR] temp=25.3C  humi=58%  light=320lux` |
+| LED | `LED ON` / `LED OFF` | `[LED] turned ON` / `[LED] turned OFF` |
+| HELP | `HELP` | 列出所有可用命令 |
+| RESET | `RESET` | 重置传感器状态 |
+
+### 5.4 学习知识点
+
+| 知识点 | 来源 | 代码体现 |
+|------|------|------|
+| UART 寄存器操作 | 第 63 章 | ioremap(0x021E8000)、readb/writeb |
+| RX 中断 | 第 56 章 | request_irq → 中断处理函数 |
+| kfifo 环形缓冲 | ★ 扩展 | kfifo_in / kfifo_to_user |
+| 阻塞/非阻塞 IO | 第 52 章 | wait_event_interruptible / O_NONBLOCK → -EAGAIN |
+| poll | 第 52 章 | poll_wait → POLLIN |
+| 波特率计算 | 第 63 章 | UBIR / UBMR 寄存器配置 |
+
+## 6. 里程碑
 
 | 阶段 | 内容 | 预计产出 |
 |------|------|---------|

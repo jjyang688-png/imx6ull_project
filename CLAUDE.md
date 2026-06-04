@@ -31,7 +31,7 @@ make clean        # 清理
 ## 项目结构
 
 ```
-driver/     — 6个内核驱动（CDEV / Platform / I2C / SPI / UART / Misc）
+driver/     — 5个内核驱动（CDEV / Platform / I2C / SPI / UART）
 app/        — 用户空间统一监控程序
 dts/        — 设备树源文件
 docs/       — 需求文档 / 架构设计 / API参考 / 阶段学习报告
@@ -48,7 +48,7 @@ scripts/    — build.sh / deploy.sh / test_all.sh / checkpatch.sh
 | 4 | 并发+IO 模型 | ✓ 完成 |
 | 5 | 按键输入驱动 | ✓ 完成 |
 | 6 | I2C + SPI 传感器 | ✓ 完成 |
-| 7 | UART + Misc 驱动 | 待开始 |
+| 7 | UART 驱动 | ✓ 完成 |
 | 8 | 统一应用+集成测试 | 待开始 |
 | 9 | 文档交付+发布 | 待开始 |
 
