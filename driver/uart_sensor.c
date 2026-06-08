@@ -312,7 +312,6 @@ static ssize_t uart_sensor_write(struct file *filp, const char __user *buf,size_
     struct uart_sensor_dev *dev = filp->private_data;
     void __iomem *base = dev->base;
     char *kbuf;
-    size_t to_write;
     int i;
 
     if (count == 0)

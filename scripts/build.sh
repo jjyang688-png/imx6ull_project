@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-KERNEL_DIR="${KERNEL_DIR:-/home/alientek/linux/imx6ull}"
+KERNEL_DIR="${KERNEL_DIR:-/home/yang/linux/alentek_uboot/linux/linux-imx-rel_imx_4.1.15_2.1.0_ga_alientek}"
 ARCH="${ARCH:-arm}"
 CROSS_COMPILE="${CROSS_COMPILE:-arm-linux-gnueabihf-}"
 
