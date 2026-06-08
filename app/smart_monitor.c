@@ -114,7 +114,7 @@ static long get_uptime(void)
     FILE *fp = fopen("/proc/uptime", "r");
     long uptime = 0;
     if (fp) {
-        fscanf(fp, "%ld", &uptime);
+        (void)fscanf(fp, "%ld", &uptime);
         fclose(fp);
     }
 
@@ -149,7 +149,7 @@ static void cmd_status(int uart_fd, const char *args)
 
     snprintf(resp, sizeof(resp), "[STATUS] Uptime: %ld sec, Sensors Loaded: %d", uptime, sensors);
 
-    write(uart_fd, resp, strlen(resp));
+    (void)write(uart_fd, resp, strlen(resp));
     log_msg("UART CMD: STATUS -> %s", resp);
     csv_log("CMD", "STATUS");
 }
@@ -186,7 +186,7 @@ static void cmd_sensor(int uart_fd, const char *args)
         close(fd_icm);
     }
     strcat(resp, "\r\n");
-    write(uart_fd, resp, strlen(resp));
+    (void)write(uart_fd, resp, strlen(resp));
     log_msg("UART CMD: SENSOR -> %s", resp);
     csv_log("CMD", "SENSOR");
 }
@@ -220,13 +220,13 @@ static void cmd_led(int uart_fd, const char *args)
         goto send;
     }
 
-    write(fd_led, led_cmd, strlen(led_cmd));
+    (void)write(fd_led, led_cmd, strlen(led_cmd));
     close(fd_led);
 
     snprintf(resp, sizeof(resp), "[LED] %s\r\n" , led_msg);
 
 send:
-    write(uart_fd, resp, strlen(resp));
+    (void)write(uart_fd, resp, strlen(resp));
     log_msg("UART CMD: LED %s -> %s", args ? args : "(null)", resp);
     csv_log("CMD", led_msg ? led_msg : "LED_ERROR");
 }
@@ -245,7 +245,7 @@ static void cmd_help(int uart_fd, const char *args)
         "  RESET           Reset sensor state\r\n"
         "===================================\r\n";
 
-    write(uart_fd, help_text, strlen(help_text));
+    (void)write(uart_fd, help_text, strlen(help_text));
     log_msg("CMD HELP");
     csv_log("CMD", "HELP");
 }
@@ -258,12 +258,12 @@ static void cmd_reset(int uart_fd, const char *args)
     */
     int fd_led = open(DEV_COMP_DRV, O_WRONLY);
     if (fd_led >= 0) {
-        write(fd_led, "off", 3); // 关闭 LED
+        (void)write(fd_led, "off", 3); // 关闭 LED
         close(fd_led);
     }
 
     char resp[] = "[RESET] System reset OK\r\n";
-    write(uart_fd, resp, strlen(resp));
+    (void)write(uart_fd, resp, strlen(resp));
     log_msg("CMD RESET");
     csv_log("CMD", "RESET");
 }
@@ -333,7 +333,7 @@ static void handle_uart_command(int uart_fd, const char *raw)
     /* ④ 未知命令 */
     char resp[128];
     snprintf(resp, sizeof(resp),"[ERROR] Unknown command: %s (typeHELP)\r\n", cmd);
-    write(uart_fd, resp, strlen(resp));
+    (void)write(uart_fd, resp, strlen(resp));
     log_msg("Unknown command: %s", cmd);
 }
 
@@ -524,12 +524,12 @@ static void handle_key_event(int fd)
     int fd_led = open(DEV_COMP_DRV, O_WRONLY);
     if (fd_led >= 0) {
         if (led_is_on) {
-            write(fd_led, "off", 3);
+            (void)write(fd_led, "off", 3);
             log_msg("  → LED 关");
             csv_log("LED", "KEY0→OFF");
             led_is_on = 0;
         } else {
-            write(fd_led, "on", 2);
+            (void)write(fd_led, "on", 2);
             log_msg("  → LED 开");
             csv_log("LED", "KEY0→ON");
             led_is_on = 1;
