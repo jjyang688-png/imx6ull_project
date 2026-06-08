@@ -49,7 +49,7 @@ scripts/    — build.sh / deploy.sh / test_all.sh / checkpatch.sh
 | 5 | 按键输入驱动 | ✓ 完成 |
 | 6 | I2C + SPI 传感器 | ✓ 完成 |
 | 7 | UART 驱动 | ✓ 完成 |
-| 8 | 统一应用+集成测试 | 待开始 |
+| 8 | 统一应用+集成测试 | ✓ 完成 |
 | 9 | 文档交付+发布 | 待开始 |
 
 ## 参考
