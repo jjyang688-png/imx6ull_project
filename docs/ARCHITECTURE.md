@@ -3,196 +3,196 @@
 ## 1. 系统分层
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                   用户空间 (User Space)               │
-│                                                      │
-│  ┌─────────────┐  ┌──────────┐  ┌──────────────────┐ │
-│  │ smart_monitor│  │ test_*   │  │ shell (echo/cat) │ │
-│  │ epoll 守护   │  │ 单测程序  │  │ sysfs/debugfs    │ │
-│  └──┬──┬──┬──┬─┘  └────┬─────┘  └────────┬─────────┘ │
-│     │  │  │  │          │                  │          │
-│   open/read/write/ioctl/poll   sysfs/debugfs         │
-└─────┼──┼──┼──┼──────────┼──────────────────┼─────────┘
-      │  │  │  │          │                  │
-══════│══│══│══│══════════│══════════════════│═════════
-      │  │  │  │          │                  │
-┌─────┼──┼──┼──┼──────────┼──────────────────┼─────────┐
-│     │  │  │  │    内核空间 (Kernel Space)   │         │
-│     │  │  │  │                              │         │
-│  ┌──▼──▼──▼──▼─┐  ┌───────┐  ┌─────────┐   │         │
-│  │ 字符设备层   │  │Input  │  │  sysfs   │   │         │
-│  │ (CDEV)      │  │子系统  │  │ debugfs  │   │         │
-│  └──┬──┬──┬──┬─┘  └───┬───┘  └─────────┘   │         │
-│     │  │  │  │         │                     │         │
-│  ┌──▼──▼──▼──▼──┐  ┌──▼──────────┐          │         │
-│  │ 平台驱动层    │  │ key_input    │          │         │
-│  │ comp_drv     │  │ (platform)   │          │         │
-│  │ uart_sensor  │  └──────────────┘          │         │
-│  │ (platform)   │                             │         │
-│  └──┬──────┬────┘                             │         │
-│     │      │                                   │         │
-│  ┌──▼──┐ ┌─▼──────┐  ┌──────────┐  ┌───────┐ │         │
-│  │GPIO │ │UART HW │  │I2C 驱动   │  │SPI 驱动│ │         │
-│  │子系统│ │寄存器   │  │ap3216c   │  │icm20608│ │         │
-│  └─────┘ └────────┘  └────┬─────┘  └───┬───┘ │         │
-│                            │             │      │         │
-└────────────────────────────│─────────────│──────┘         │
-                             │             │                 │
-                    ┌────────▼──┐  ┌───────▼──┐             │
-                    │ I2C1 总线 │  │ ECSPI3   │             │
-                    │ (100kHz)  │  │ (8MHz)   │             │
-                    └─────┬─────┘  └─────┬────┘             │
-                          │              │                   │
-══════════════════════════│══════════════│═══════════════════│
-                          │              │                   │
-┌─────────────────────────│──────────────│───────────────────┐
-│                   硬件 (Hardware)       │                   │
-│                          │              │                   │
-│  ┌──────┐  ┌──────┐  ┌──▼─────┐  ┌────▼─────┐  ┌───────┐ │
-│  │ LED  │  │ KEY0 │  │AP3216C │  │ ICM20608 │  │UART3  │ │
-│  │GPIO3 │  │GPIO18│  │0x1E    │  │ CS0      │  │0x021E │ │
-│  └──────┘  └──────┘  └────────┘  └──────────┘  │C000   │ │
-│                                                  └───────┘ │
-└───────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     用户空间 (User Space)                         │
+│                                                                   │
+│  ┌──────────────┐  ┌──────────┐  ┌───────────┐  ┌─────────────┐ │
+│  │ smart_monitor │  │ test_*   │  │ shell     │  │ libedge.a   │ │
+│  │ epoll 守护    │  │ 测试程序  │  │ cat/echo  │  │ 基础库      │ │
+│  └──┬──┬──┬──┬──┘  └────┬─────┘  └────┬──────┘  └──────┬──────┘ │
+│     │  │  │  │           │              │                │        │
+│   open/read/write/ioctl/poll     sysfs/cat        静态链接       │
+└─────┼──┼──┼──┼───────────┼──────────────┼────────────────┼──────┘
+      │  │  │  │            │              │                │
+══════│══│══│══│════════════│══════════════│════════════════│══════
+      │  │  │  │            │              │                │
+┌─────┼──┼──┼──┼────────────┼──────────────┼────────────────┼──────┐
+│     │  │  │  │      内核空间 (Kernel Space)                  │     │
+│     │  │  │  │                                               │     │
+│  ┌──▼──▼──▼──▼──┐  ┌──────────┐  ┌─────────┐  ┌──────────┐ │     │
+│  │ 字符设备层    │  │ misc 设备 │  │ Input   │  │ sysfs    │ │     │
+│  │ (cdev)       │  │ /dev/dht* │  │ /dev/   │  │ debugfs  │ │     │
+│  │ /dev/comp*   │  │ /dev/sr*  │  │ input/  │  │          │ │     │
+│  │ /dev/icm*    │  │ /dev/mq*  │  │ eventX  │  │          │ │     │
+│  │ /dev/uart*   │  │ /dev/serv*│  │          │  │          │ │     │
+│  │ /dev/can*    │  │ /dev/rel* │  │          │  │          │ │     │
+│  └──┬──┬──┬──┬──┘  │ /dev/wdt* │  └────┬─────┘  └──────────┘ │     │
+│     │  │  │  │     └──┬──┬──┬──┘       │                       │     │
+│     │  │  │  │        │  │  │           │                       │     │
+│  ┌──▼──▼──▼──▼────────▼──▼──▼──┐  ┌───▼───────────┐           │     │
+│  │      平台/总线驱动层          │  │ Input 子系统    │           │     │
+│  │  comp_drv | uart_sensor     │  │ key_input      │           │     │
+│  │  dht11 | sr04 | relay      │  └────────────────┘           │     │
+│  │  mq135_adc | servo_pwm     │                                │     │
+│  │  can_drv  | wdt            │                                │     │
+│  └──┬──┬──┬──┬──┬──┬──┬──┬───┘                                │     │
+│     │  │  │  │  │  │  │  │                                     │     │
+│  ┌──▼──▼──▼──▼──▼──▼──▼──▼──────────────────────────────────┐ │     │
+│  │              内核子系统层                                   │ │     │
+│  │  GPIO │ I2C │ SPI │ UART(裸) │ ADC(裸) │ PWM(裸) │ CAN   │ │     │
+│  │        │     │     │          │         │         │(Socket)│ │     │
+│  └──┬──┬──┼──┬──┼──┬──┼──────────┼─────────┼─────────┼───────┘ │     │
+│     │  │  │  │  │  │  │          │         │         │          │     │
+└─────│──│──│──│──│──│──│──────────│─────────│─────────│──────────┘     │
+      │  │  │  │  │  │  │          │         │         │                 │
+══════│══│══│══│══│══│══│══════════│═════════│═════════│═════════════════│
+      │  │  │  │  │  │  │          │         │         │                 │
+┌─────│──│──│──│──│──│──│──────────│─────────│─────────│─────────────────┐
+│     │  │  │  │  │  │  │    硬件 (Hardware)   │         │                │
+│  ┌──▼┐┌─▼┐┌─▼─┐┌▼──┐┌▼──┐┌▼──┐┌▼────┐┌───▼─┐┌────▼───┐┌──────┐┌───┐│
+│  │LED││KEY││DHT││SR ││MQ ││舵机││继电器││AP3216││ICM20608││UART3 ││CAN││
+│  │   ││   ││11 ││04 ││135││PWM││GPIO  ││I2C   ││SPI    ││0x021E││收发 ││
+│  └───┘└───┘└───┘└───┘└───┘└───┘└─────┘└─────┘└───────┘│C000  ││器  ││
+│                                                          └──────┘└───┘│
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
-## 2. 数据流
+## 2. 驱动注册方式对比
 
-### 2.1 传感器读取流程
+| 驱动 | 注册方式 | 设备节点 | 驱动模型 | 特点 |
+|------|------|------|------|------|
+| comp_drv | platform_driver + CDEV | /dev/comp_drv | cdev | read/write/ioctl/poll/fasync + sysfs + debugfs + 定时器 |
+| key_input | platform_driver + Input | /dev/input/eventX | input | 中断上半部 + delayed_work 下半部 |
+| ap3216c | i2c_driver + CDEV | /dev/ap3216c | cdev | SMBus + i2c_transfer 突发读 |
+| icm20608 | spi_driver + CDEV | /dev/icm20608 | cdev | SPI message/transfer + ioctl |
+| uart_sensor | platform_driver + CDEV | /dev/uart_sensor | cdev | ioremap + readb/writeb + RX中断 + kfifo |
+| **dht11** | **misc_register** | **/dev/dht11** | **misc** | **单总线时序 + sysfs 属性** |
+| **sr04** | **misc_register** | **/dev/sr04** | **misc** | **GPIO中断 + ktime脉冲测量 + completion** |
+| **mq135_adc** | **misc_register** | **/dev/mq135** | **misc** | **ioremap ADC + kthread + sysfs** |
+| **servo_pwm** | **misc_register** | **/dev/servo** | **misc** | **ioremap PWM + 占空比控制** |
+| **relay** | **misc_register** | **/dev/relay** | **misc** | **gpiod 输出 + sysfs** |
+| **can_drv** | **cdev** | **/dev/can_ctrl** | **cdev** | **SocketCAN 封装 + ioctl** |
+| **wdt** | **misc_register** | **/dev/wdt_custom** | **misc** | **ioremap WDOG + ioctl** |
+
+## 3. 数据流
+
+### 3.1 传感器读取流程 (v2.0 扩展)
 
 ```
 触发源:
-  ├─ 定时轮询 (epoll 超时, 每 N 秒)
+  ├─ epoll 事件 (LED/按键/UART 有事件时)
+  ├─ 定时轮询 (timer 周期, 每 N 秒)
   └─ UART SENSOR 命令
 
 流程:
   smart_monitor.read(fd)
     → 系统调用 read()
     → 驱动 read():
-        ├─ ap3216c: i2c_transfer() → 读 I2C 寄存器 → copy_to_user()
-        └─ icm20608: spi_sync() → 读 SPI 寄存器 → copy_to_user()
-    → 用户空间解析 struct → 打印 + CSV 日志
+        ├─ ap3216c:   i2c_transfer() → 读 I2C 寄存器 → copy_to_user()
+        ├─ icm20608:  spi_sync() → 读 SPI 寄存器 → copy_to_user()
+        ├─ dht11:     gpiod 时序 → 40bit 数据 → 校验 → copy_to_user()
+        ├─ sr04:      TRIG 脉冲 → 等 completion → copy_to_user()
+        ├─ mq135_adc: readl(ADC) → copy_to_user()
+        └─ servo:     返回当前角度 → copy_to_user()
+    → 用户空间解析 → 打印 + 日志 + 联动判断
 ```
 
-### 2.2 UART 命令控制台流程
+### 3.2 联动控制流程
 
 ```
-PC 串口助手 ──RS232──► DB9 ──► UART3_RXD
-                                │
-                        硬件 RX FIFO
-                                │
-                        触发中断 (GIC_SPI 28)
-                                │
-                        uart_rx_interrupt()
-                          ├─ readb(URXD)          读硬件寄存器
-                          ├─ kfifo_in()           写入环形缓冲
-                          └─ wake_up()            唤醒阻塞 read
-
-                        smart_monitor.read(fd[4])
-                          ├─ kfifo_to_user()      从缓冲取数据
-                          ├─ handle_uart_rx()     行缓冲拼包
-                          └─ handle_uart_command() 查表分发
-                               ├─ cmd_status() → write(fd, "[STATUS]...")
-                               ├─ cmd_sensor() → open/read/close 传感器
-                               ├─ cmd_led()    → open/write/close LED
-                               ├─ cmd_help()
-                               └─ cmd_reset()
-
-                        smart_monitor.write(fd[4], resp)
-                          └─ uart_sensor_write()
-                               └─ 逐字节 writeb(UTXD) → UART3_TXD
-                                                         │
-                                                  RS232 → PC 串口助手
+sensor → g_sensors (共享区)
+  │
+  ├── 温度 > 35°C (连续3次) → write(relay_fd, "on") + write(led_fd, "blink")
+  ├── 温度 < 30°C (连续3次) → write(relay_fd, "off") + write(led_fd, "on")
+  ├── 距离 < 30cm (连续2次) → write(beep_fd, "on")
+  └── 空气质量 ≥ 4 级       → write(beep_fd, "on") + write(relay_fd, "on")
 ```
 
-### 2.3 LED 控制流程（多入口）
+## 4. IO 模型支持矩阵 (v2.0 扩展)
 
-```
-                    ┌─ UART:  PC 发 "LED ON"  → cmd_led()
-   LED 状态变更 ◄───├─ 按键:  KEY0 按下       → handle_key_event()
-                    └─ 键盘:  按 '1' 或 '2'   → handle_stdin()
-
-  统一走: open("/dev/comp_drv") → write("on"/"off") → close()
-                                    │
-                            comp_drv.write()
-                              ├─ strncmp("on"/"off")
-                              ├─ gpiod_set_value()
-                              ├─ comp_led_notify()
-                              │    ├─ wake_up()     阻塞 read 醒来
-                              │    └─ kill_fasync() SIGIO 通知
-                              └─ return
-```
-
-## 3. 模块依赖关系
-
-```
-smart_monitor (用户态)
-  ├─ /dev/comp_drv       ← comp_drv.ko       (GPIO 子系统)
-  ├─ /dev/input/event0   ← key_input.ko      (Input 子系统 + GPIO)
-  ├─ /dev/ap3216c        ← ap3216c.ko        (I2C 子系统)
-  ├─ /dev/icm20608       ← icm20608.ko       (SPI 子系统)
-  └─ /dev/uart_sensor    ← uart_sensor.ko    (platform 驱动 + 硬件寄存器)
-
-内核子系统依赖:
-  GPIO  ─── comp_drv, key_input
-  Input ─── key_input
-  I2C   ─── ap3216c
-  SPI   ─── icm20608
-  UART  ─── uart_sensor (裸寄存器, 不使用内核 UART 子系统)
-```
-
-## 4. 驱动注册方式对比
-
-| 驱动 | 注册方式 | 设备节点 | fops 来源 | 特点 |
-|------|------|------|------|------|
-| comp_drv | platform_driver + CDEV | /dev/comp_drv | 自己写 | 最完整：read/write/ioctl/poll/fasync + sysfs + debugfs + 内核定时器 |
-| key_input | platform_driver + Input | /dev/input/eventX | input 子系统 | 不需要自己写 fops；中断上半部 + 下半部 (workqueue) |
-| ap3216c | i2c_driver + CDEV | /dev/ap3216c | 自己写 | I2C SMBus + i2c_transfer 突发读 |
-| icm20608 | spi_driver + CDEV | /dev/icm20608 | 自己写 | SPI message/transfer + ioctl 分轴读取 |
-| uart_sensor | platform_driver + CDEV | /dev/uart_sensor | 自己写 | 裸寄存器操作 (ioremap + readb/writeb)；RX 中断 + kfifo；阻塞/非阻塞/poll |
-
-## 5. IO 模型支持矩阵
-
-| 驱动 | 阻塞读 | 非阻塞读 | poll | ioctl | 异步通知 | 写操作 |
+| 驱动 | 阻塞读 | 非阻塞读 | poll | ioctl | 写操作 | fasync |
 |------|------|------|------|------|------|------|
-| comp_drv | wait_event | O_NONBLOCK | POLLIN/OUT | 4 个命令 | SIGIO | on/off |
-| key_input | — | O_NONBLOCK → EAGAIN | 通用 | — | — | — |
-| ap3216c | mutex_lock | — | — | — | — | — |
-| icm20608 | mutex_lock | — | — | 4 个命令 | — | — |
-| uart_sensor | wait_event | O_NONBLOCK → EAGAIN | POLLIN/OUT | — | — | TX 发送 |
+| comp_drv | ✅ wait_event | ✅ -EAGAIN | ✅ POLLIN/OUT | ✅ 4命令 | ✅ on/off | ✅ SIGIO |
+| key_input | — | ✅ -EAGAIN | ✅ | — | — | — |
+| ap3216c | — | — | — | — | — | — |
+| icm20608 | — | — | — | ✅ 4命令 | — | — |
+| uart_sensor | ✅ wait_event | ✅ -EAGAIN | ✅ POLLIN/OUT | — | ✅ TX发送 | — |
+| **dht11** | **✅ poll_wait** | — | **✅ POLLIN** | — | — | — |
+| **sr04** | **✅ completion** | — | **✅ POLLIN** | — | — | — |
+| **mq135_adc** | — | — | **✅ POLLIN** | — | — | — |
+| **servo_pwm** | — | — | — | — | **✅ 角度** | — |
+| **relay** | — | — | — | — | **✅ on/off** | — |
+| **can_drv** | — | **✅ -EAGAIN** | **✅ POLLIN/OUT** | **✅ 2命令** | **✅ 帧** | — |
+| **wdt** | — | — | — | **✅ 2命令** | **✅ 喂狗** | — |
 
-## 6. 并发控制策略
+## 5. 并发控制策略
 
 | 驱动 | 锁类型 | 保护范围 | 为什么选它 |
 |------|------|------|------|
-| comp_drv | mutex | 设备状态 + 定时器 | 可能睡眠（等待 GPIO） |
-| key_input | spinlock | last_state 标志 | 中断上下文访问，不能睡眠 |
-| ap3216c | mutex | 传感器数据缓存 | 进程上下文，可能睡眠（I2C 传输） |
-| icm20608 | mutex | 传感器数据缓存 | 进程上下文，可能睡眠（SPI 传输） |
-| uart_sensor | mutex | kfifo + 设备配置 | 进程上下文；中断只用无锁 kfifo_in |
+| comp_drv | mutex | 设备状态 + 定时器 | 可能睡眠 |
+| key_input | spinlock | 中断共享状态 | 中断上下文 |
+| ap3216c | mutex | 传感器数据缓存 | 进程上下文 |
+| icm20608 | mutex | 传感器数据缓存 | 进程上下文 |
+| uart_sensor | mutex | kfifo + 设备配置 | 进程上下文，中断用无锁 kfifo_in |
+| **sr04** | **completion** | **等待回波完成** | **一次性同步，比 wait_event 更简单** |
+| **mq135_adc** | **mutex** | **ADC 读数 + kthread 睡眠** | **kthread 在进程上下文** |
 
-## 7. 项目文件统计
+## 6. 模块依赖关系
 
-| 目录 | 文件 | 代码行数 | 说明 |
-|------|------|------|------|
-| driver/ | 6 个 .c + 2 个 .h + Makefile | ~2800 | 5 个功能驱动 + 1 个示例 |
-| app/ | smart_monitor.c + Makefile | ~810 | 统一守护进程 |
-| test/ | 4 个 .c | ~450 | 各驱动独立测试 |
-| dts/ | 1 个 .dtsi | ~60 | 设备树覆盖 |
-| docs/ | 10 个 .md | ~3700 | 需求 + 架构 + API + 8 阶段报告 |
-| scripts/ | 4 个 .sh | ~150 | 构建 + 部署 + 测试 + 风格检查 |
+```
+smart_monitor (用户态)
+  ├── /dev/comp_drv       ← comp_drv.ko        (GPIO 子系统)
+  ├── /dev/input/event0   ← key_input.ko       (Input 子系统 + GPIO)
+  ├── /dev/ap3216c        ← ap3216c.ko         (I2C 子系统)
+  ├── /dev/icm20608       ← icm20608.ko        (SPI 子系统)
+  ├── /dev/uart_sensor    ← uart_sensor.ko     (platform + 裸寄存器)
+  ├── /dev/dht11          ← dht11.ko           (misc + 裸GPIO时序)
+  ├── /dev/sr04           ← sr04.ko            (misc + GPIO中断)
+  ├── /dev/mq135          ← mq135_adc.ko       (misc + 裸ADC寄存器)
+  ├── /dev/servo          ← servo_pwm.ko       (misc + 裸PWM寄存器)
+  ├── /dev/relay          ← relay.ko           (misc + GPIO)
+  ├── /dev/can_ctrl       ← can_drv.ko         (cdev + SocketCAN)
+  ├── /dev/wdt_custom     ← wdt.ko             (misc + 裸WDOG寄存器)
+  └── libedge.a            ← libedge/           (静态链接)
 
-## 8. 关键技术决策记录
+内核子系统依赖:
+  GPIO    — comp_drv, key_input, dht11, sr04, relay
+  Input   — key_input
+  I2C     — ap3216c
+  SPI     — icm20608
+  UART    — uart_sensor (裸寄存器, 不使用内核 UART 子系统)
+  ADC     — mq135_adc (裸寄存器)
+  PWM     — servo_pwm (裸寄存器)
+  CAN     — can_drv (SocketCAN)
+  WDOG    — wdt (裸寄存器)
+  kfifo   — uart_sensor
+```
+
+## 7. 关键技术决策记录
 
 | 决策 | 选项 A | 选项 B | 选择 | 原因 |
 |------|------|------|------|------|
-| UART 驱动方式 | 内核 UART 子系统 | 裸寄存器操作 | B | 学习寄存器级操作；项目不要求 TTY 兼容 |
-| 按键去抖 | tasklet | delayed_work | B | workqueue 可睡眠，未来可扩展 I2C/SPI 按键 |
-| SPI 读 API | spi_write_then_read | spi_sync + transfer | B | Linux 4.1.15 没有 spi_write_then_read |
-| 命令解析位置 | 驱动内 | 用户空间 | B | 跨驱动调用在内核中困难；Unix 哲学 |
-| IO 多路复用 | select | epoll | B | epoll O(1) 复杂度，Linux 标准方案 |
-| 项目监控 | 独立 misc 驱动 | /proc + sysfs | 删除 misc | 功能与现有内核机制重复 |
+| UART 驱动方式 | 内核 UART 子系统 | 裸寄存器操作 | B | 学习寄存器级操作 |
+| 按键去抖 | tasklet | delayed_work | B | workqueue 可睡眠 |
+| 命令解析位置 | 驱动内 | 用户空间 | B | 跨驱动调用困难；Unix 哲学 |
+| IO 多路复用 | select | epoll | B | epoll O(1) 复杂度 |
+| **DHT11 驱动模型** | **cdev** | **misc** | **B** | **代码量减半，自动 sysfs** |
+| **SR04 同步方式** | **wait_event** | **completion** | **B** | **一次性脉冲，completion 语义更准确** |
+| **MQ135 采集方式** | **用户空间轮询** | **kthread 内核采集** | **B** | **学习 kthread，降低用户空间压力** |
+| **CAN 接入方式** | **裸寄存器** | **SocketCAN** | **B** | **SocketCAN 是 Linux 标准，工业级稳定** |
+
+## 8. 项目文件统计 (v2.0 规划)
+
+| 目录 | 说明 | 规划行数 |
+|------|------|------|
+| driver/ | 12 个驱动 (5有 + 7新) + Makefile | ~4,500 |
+| libedge/ | 8 个基础库模块 + 单元测试 | ~2,000 |
+| app/ | smart_monitor (扩展) + Makefile | ~900 |
+| test/ | 11 个功能测试 + 5 个单元测试 | ~1,300 |
+| dts/ | 设备树 (扩展节点) | ~100 |
+| docs/ | 10 份 MD 文档 + 9 份阶段报告 | ~4,000 |
+| scripts/ | 4 个脚本 | ~150 |
 
 ---
 
-*文档版本：v1.0 | 日期：2026-06-08*
+*文档版本：v2.0 | 日期：2026-06-10*
