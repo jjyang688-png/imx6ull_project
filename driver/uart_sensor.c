@@ -410,9 +410,13 @@ static int uart_sensor_probe(struct platform_device *pdev)
         dev_err(d, "无法获取寄存器资源\n");
         return -ENODEV;
     }
-    dev->base = devm_ioremap_resource(d, res);
-    if (IS_ERR(dev->base))
-        return PTR_ERR(dev->base);
+    /* 使用 devm_ioremap 而非 devm_ioremap_resource，绕过 DTB 中
+     * &uart3 未禁用时的资源冲突检查（临时方案，生产环境应修复 DTB）*/
+    dev->base = devm_ioremap(d, res->start, resource_size(res));
+    if (!dev->base) {
+        dev_err(d, "ioremap 失败\n");
+        return -ENOMEM;
+    }
 
     /* ===== ③ 获取中断号 ===== */
     dev->irq = platform_get_irq(pdev, 0);
