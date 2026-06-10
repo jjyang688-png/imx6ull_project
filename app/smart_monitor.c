@@ -388,11 +388,11 @@ static int open_all_devices(void)
     else
         count++;    
 
-    /* UART 命令控制台（关键设备，必须打开） */
+    /* UART 命令控制台（v1.0 必需设备，v2.0 降级为非致命 — 需 DTB 中禁用 &uart3） */
     g_device_fds[4] = open(DEV_UART_SENSOR, O_RDWR);
     if (g_device_fds[4] < 0) {
-        log_msg("ERROR: 无法打开 %s (UART命令控制台必须可用)", DEV_UART_SENSOR);
-        return -1;  /* 关键设备打开失败，返回错误 */
+        log_msg("WARN: 无法打开 %s (UART控制台不可用 — 请检查DTB中&uart3是否disabled)", DEV_UART_SENSOR);
+        /* 非致命：继续运行，仅失去UART命令功能 */
     } else {
         count++;
     }
