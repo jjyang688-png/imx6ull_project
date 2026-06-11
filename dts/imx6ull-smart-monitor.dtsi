@@ -30,14 +30,16 @@
    *
    * 注意：&uart3 已设为 disabled，防止 imx 驱动抢占资源。
    */
-  uart_sensor_dev {
+  uart_sensor_dev: uart_sensor_dev {
     compatible = "smartmonitor,uart-sensor";
     reg = <0x021ec000 0x4000>;
     interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
-    interrupt-parent = <&gpc>;
+    interrupt-parent = <&intc>;
     clocks = <&clks IMX6UL_CLK_UART3_IPG>,
              <&clks IMX6UL_CLK_UART3_SERIAL>;
     clock-names = "ipg", "per";
+    pinctrl-names = "default";
+    pinctrl-0 = <&pinctrl_uart3>;
     current-speed = <115200>;
     status = "okay";
   };
@@ -62,7 +64,22 @@
   };
 };
 
-/* ========== UART3 — 释放给我们的命令控制台驱动 ========== */
+/* ========== UART3 — 启用内核 imx-uart 驱动 (ttymxc2) ========== */
 &uart3 {
-    status = "disabled";   /* 不让 imx 驱动占用，由 uart_sensor_dev 独占 */
+    status = "okay";  /* 使用内核 imx-uart 驱动，设备文件 /dev/ttymxc2 */
+};
+
+/* 禁用 UART2 — 释放 UART3_TX/RX 引脚（被 UART2 流控占用） */
+&uart2 {
+    status = "disabled";
+};
+
+/* 禁用 FLEXCAN1 — 释放 UART3_RTS/CTS 引脚 */
+&flexcan1 {
+    status = "disabled";
+};
+
+/* 禁用自定义 uart_sensor_dev — 与 &uart3 的 reg 冲突 */
+&uart_sensor_dev {
+    status = "disabled";
 };

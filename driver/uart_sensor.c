@@ -111,15 +111,37 @@ static struct uart_sensor_dev *g_uart_dev;
 static int uart_hw_init(struct uart_sensor_dev *dev)
 {
     void __iomem *base = dev->base;
+    unsigned long timeout;
+
     /*
     * ① 软件复位 — 清空 TX/RX FIFO + 所有状态位
     *
     * UCR2 bit0 = SRST：写 1 触发复位，硬件完成复位后自动变 0。
-    * while 循环等硬件清零，表示复位完成。
+    *
+    * 注意：部分 i.MX6ULL 硅片版本需要先使能 UART（UCR1_UARTEN=1）
+    * 才能让 SRST 完成。先关掉所有控制寄存器，然后使能模块，
+    * 再触发软件复位。
     */
+    writel(0, base + UCR1);   /* 确保 UART 初始状态关闭 */
+    writel(0, base + UCR4);   /* 关 RX 中断 */
+    /* 使能 UART 模块 — 为 SRST 提供时钟门控 */
+    writel(UCR1_UARTEN, base + UCR1);
+    udelay(10);               /* 等时钟稳定 */
+    /* 触发软复位 */
     writel(UCR2_SRST, base + UCR2);
-    while (readl(base + UCR2) & UCR2_SRST)
+    timeout = jiffies + msecs_to_jiffies(100);
+    while (readl(base + UCR2) & UCR2_SRST) {
+        if (time_after(jiffies, timeout)) {
+            pr_warn("uart_sensor: 软件复位超时 (UCR2=0x%08lx, UCR1=0x%08lx) — 跳过复位继续\n",
+                   (unsigned long)readl(base + UCR2),
+                   (unsigned long)readl(base + UCR1));
+            /* 非致命：部分硅片版本或时钟配置下 SRST 可能不自动清零，
+             * 但 UART 功能仍可正常使用。写 0 强制清除 SRST 位。 */
+            writel(0, base + UCR2);
+            break;
+        }
         cpu_relax();
+    }
 
    /*
     * ② 配置帧格式 + 使能收发 — UCR2
