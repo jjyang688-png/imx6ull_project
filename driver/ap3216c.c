@@ -96,42 +96,44 @@ static int ap3216c_write_reg(struct ap3216c_dev *dev, u8 reg, u8 val)
 }
 
 static int ap3216c_read_data(struct ap3216c_dev *dev)
-{  
-    u8 reg_addr = REG_IR_DATA_LOW;    /* 起始寄存器地址 0x0A */
-    u8 buf[6];                         /* 接收 6 字节 IR+ALS+PS */
-    int ret;
+{
+    struct i2c_client *client = dev->client;
+    s32 ir, als, ps;
+    int ret = 0;
 
-    /* I2C 底层传输：两条消息串在一起，中间不释放总线 */
-    struct i2c_msg msgs[2] = {
-        {
-            .addr   = dev->client->addr,  /* I2C 从设备地址 = 0x1E */
-            .flags  = 0,                  /* 0 = 写操作（不发 STOP 前是写） */
-            .len    = 1,                  /* 先写 1 字节… */
-            .buf    = &reg_addr,          /* …内容是寄存器地址 0x0A */
-        },
-        {
-            .addr   = dev->client->addr,  /* 同一个设备地址 */
-            .flags  = I2C_M_RD,           /* 读操作 */
-            .len    = 6,                  /* 再读 6 字节 */
-            .buf    = buf,                /* 数据存到这里 */
-        },
-    };
-
-    ret = i2c_transfer(dev->client->adapter, msgs, 2);
-    if (ret < 0) {
-        dev_err(&dev->client->dev, "i2c_transfer 失败: %d\n", ret);
-        return ret;
+    /*
+     * AP3216C 不支持一次 I2C 连续读取超过 2 字节（寄存器指针不自增）。
+     * 必须分三次 SMBus word read，每次读一个 16 位传感器值。
+     */
+    ir = i2c_smbus_read_word_data(client, REG_IR_DATA_LOW);
+    if (ir < 0) {
+        dev_err(&client->dev, "读取 IR 失败: %d\n", ir);
+        ret = ir;
+        ir = 0;
     }
 
-    /* 小端序解析（AP3216C 是 LSB 在前，和 ICM20608 相反） */
+    als = i2c_smbus_read_word_data(client, REG_ALS_DATA_LOW);
+    if (als < 0) {
+        dev_err(&client->dev, "读取 ALS 失败: %d\n", als);
+        ret = als;
+        als = 0;
+    }
+
+    ps = i2c_smbus_read_word_data(client, REG_PS_DATA_LOW);
+    if (ps < 0) {
+        dev_err(&client->dev, "读取 PS 失败: %d\n", ps);
+        ret = ps;
+        ps = 0;
+    }
+
     mutex_lock(&dev->lock);
-    dev->data.ir  = ((u16)buf[1] << 8) | buf[0];   /* buf[0]=低字节 */
-    dev->data.als = ((u16)buf[3] << 8) | buf[2];
-    dev->data.ps  = ((u16)buf[5] << 8) | buf[4];
+    dev->data.ir  = (u16)ir;
+    dev->data.als = (u16)als;
+    dev->data.ps  = (u16)ps;
     mutex_unlock(&dev->lock);
 
-    DBG(dev, "IR=%u ALS=%u PS=%u\n", dev->data.ir, dev->data.als,dev->data.ps);
-    return 0;
+    DBG(dev, "IR=%u ALS=%u PS=%u\n", dev->data.ir, dev->data.als, dev->data.ps);
+    return ret;
 }
 
 
